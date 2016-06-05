@@ -34,14 +34,12 @@ class Vista {
 	}
 
 	public void replyConsulta1(HttpServletResponse res, PrintWriter out, String fasesRecorridas,
-			HashMap<String, Node> interpretes) throws XPathExpressionException{ 
+			HashMap<String, Document> fechas) throws XPathExpressionException{ 
 		printCabeceraHtml(out, fasesRecorridas);
 		TreeMap<String, Node> mapaOrdenado = new TreeMap<String, Node>();
-		mapaOrdenado.putAll(interpretes);
-		for(String nombre: mapaOrdenado.keySet()){ 
-			Node interprete = interpretes.get(nombre);
-			String id = (String) xpath.evaluate("/Interprete/Id", interprete, XPathConstants.STRING);
-			out.println("<tr><td><input type='radio' name='select' value='" + id + "'>" + nombre +"</td></tr>");
+		mapaOrdenado.putAll(fechas);
+		for(String fecha: mapaOrdenado.keySet()){ 
+			out.println("<tr><td><input type='radio' name='select' value='" + fecha + "'>" + fecha +"</td></tr>");
 		}
 		out.println("<tr><td><input type='radio' name='select' value='todos' checked>Todas las opciones mostradas </td></tr>");
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"0\"/>");
@@ -54,24 +52,13 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyAlbumesPorInterprete(HttpServletResponse res, PrintWriter out, String fasesRecorridas, 
-			ArrayList<Node> albumes) throws XPathExpressionException{
+	public void replyCanalesPorFecha(HttpServletResponse res, PrintWriter out, String fasesRecorridas, 
+			ArrayList<String> canales) throws XPathExpressionException{
 		printCabeceraHtml(out, fasesRecorridas);
-		ArrayList<String> anhos = new ArrayList<String>();
-		for(Node album: albumes){
-			String anho = (String) xpath.evaluate("./Año", album, XPathConstants.STRING);
-			if(!anhos.contains(anho))
-				anhos.add(anho);
-		}
-		Collections.sort(anhos);
-		for(String anho: anhos){
-			for(Node album: albumes){
-				if(xpath.evaluate("self::node()[Año ='" + anho + "']", album, XPathConstants.NODE) != null){
-					String nombreAlbum = (String) xpath.evaluate("./NombreA", album, XPathConstants.STRING);
-					out.println("<tr><td><input type='radio' name='select' value='" + nombreAlbum + 
-							"'>" + nombreAlbum + " (" + anho + ")</td></tr>");
-				}
-			}
+		Collections.sort(canales);
+		for(String nombreCanal: canales){
+                        out.println("<tr><td><input type='radio' name='select' value='" + nombreCanal + 
+                                "'>" + nombreCanal + "</td></tr>");
 		}
 		out.println("<tr><td><input type='radio' name='select' value='todos' checked>Todas las opciones mostradas </td></tr>");
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"11\"/>");

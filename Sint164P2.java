@@ -16,9 +16,9 @@ public class Sint164P2 extends HttpServlet {
 		ArrayList<String> valoresConsultas = new ArrayList<String>();
 		XML_DTD_Parser parseador;
 		private XPath xpath;
-		private String  fichinicial= "http://clave.det.uvigo.es:8080/~sintprof/15-16/p2/sabina.xml";
+		private String  fichinicial= "http://clave.det.uvigo.es:8080/~sintprof/15-16/p2j/tvml-20-12-2004.xml";
 		HashMap<String,Document> mapaDocs = new HashMap<String,Document>();
-		ArrayList<String> IMLleidos = new ArrayList<String>();
+		ArrayList<String> TVMLleidos = new ArrayList<String>();
 		ArrayList<String> listaErrores = new ArrayList<String>();
 		
 	public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException{	
@@ -27,7 +27,6 @@ public class Sint164P2 extends HttpServlet {
 		try{
 			getArbolInicial(fichinicial);
 		}catch(XPathExpressionException e){
-			//TODO: añadir los errores gestionados a un archivo y todo el rollo
 		}
 		res.setContentType("text/html");
 		PrintWriter out = res.getWriter();
@@ -42,29 +41,27 @@ public class Sint164P2 extends HttpServlet {
 			listaErrores.add("Error en: " + fichero + ": " + gestorErrores.getMensaje());
 			return;
 		}
-		String id = (String) xpath.evaluate("Nombre/Id", documento.getDocumentElement(), XPathConstants.STRING);
+		String id = (String) xpath.evaluate("/Programacion/Fecha", documento.getDocumentElement(), XPathConstants.STRING);
 		mapaDocs.put(id, documento);
 		//Vamos con conseguir los xml
 		//esto es para un artista
-		IMLleidos.add(fichero);
-		NodeList IMLdelartista = (NodeList) xpath.evaluate("/Interprete/Album/Cancion/Version/IML", 
+		TVMLleidos.add(fichero);
+		NodeList ArchivosTVML = (NodeList) xpath.evaluate("/Programacion/Canal/Programa/Intervalo/OtraEmision/UrlTVML", 
 				documento.getDocumentElement(), XPathConstants.NODESET);
-		if(IMLdelartista.getLength() != 0){
-			for(int i = 0; i < IMLdelartista.getLength(); i++){
-				String IML = IMLdelartista.item(i).getTextContent().trim();
-				if (!IML.startsWith("http"))
-					IML = "http://clave.det.uvigo.es:8080/~sintprof/15-16/p2/" + IML;
-				if(IMLleidos.contains(IML)){
+		if(ArchivosTVML.getLength() != 0){
+			for(int i = 0; i < ArchivosTVML.getLength(); i++){
+				String TVML = ArchivosTVML.item(i).getTextContent().trim();
+				if (!TVML.startsWith("http"))
+					TVML = "http://clave.det.uvigo.es:8080/~sintprof/15-16/p2j/" + TVML;
+				if(TVMLleidos.contains(TVML)){
 					continue;
 				}else{
-					fichero = IML;
+					fichero = TVML;
 					System.out.println("Se parseará y añadirá el fichero " + fichero);
 					getArbolInicial(fichero);
 				}
 			}
 		}
-		//TODO: hacer esto recursivo
-		//TODO: comprobar que el id es único?
 	}
 	
 	public String ArrayListToHtml(ArrayList<String> Lista){
@@ -108,13 +105,12 @@ public class Sint164P2 extends HttpServlet {
 				if(nextfase.equals("11")){
 				ListaFases.add("Consulta 1");
 				String fasesRecorridas = ArrayListToHtml(ListaFases);
-				HashMap<String, Node> interpretes = getConsulta1();
-				vista.replyConsulta1(res, out, ArrayListToHtml(ListaFases), interpretes);
+				vista.replyConsulta1(res, out, ArrayListToHtml(ListaFases), mapaDocs);
 			}else if(nextfase.equals("12")){
-				ListaFases.add("Interprete = " + valoresConsultas.get(valoresConsultas.size()-1));
-				ArrayList<Node> albumes = getAlbumesPorInterprete(exprXpath(valoresConsultas, nextfase),
+				ListaFases.add("Fecha  = " + valoresConsultas.get(valoresConsultas.size()-1));
+				ArrayList<String> albumes = getCanalesPorFecha(exprXpath(valoresConsultas, nextfase),
 						valoresConsultas.get(0)); //y mapaDocs (para el controlador si usara MVC)
-				vista.replyAlbumesPorInterprete(res, out, ArrayListToHtml(ListaFases), albumes);
+				vista.replyCanalesPorFecha(res, out, ArrayListToHtml(ListaFases), albumes);
 			}else if(nextfase.equals("13")){
 				ListaFases.add("Album = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<Node>  canciones = getCancionesPorAlbum(exprXpath(valoresConsultas, nextfase),
@@ -147,7 +143,7 @@ public class Sint164P2 extends HttpServlet {
 		String penultimaConsulta = "";
 		switch(faseSig){
 		case 12:
-			return "/Interprete/Album"; 
+			return "/Programacion/Canal/NombreCanal"; 
 		case 13:
 			if(consultasprevias.get(1).equals("todos"))
 				return "/Interprete/Album/Cancion";
@@ -186,19 +182,8 @@ public class Sint164P2 extends HttpServlet {
 		return null;
 	}
 	
-	//simplificable usando xpath, tiene una opción para (campo1|campo2)
-	public HashMap<String, Node> getConsulta1() throws XPathExpressionException{
-		HashMap<String,Node> interpretesId = new HashMap<String,Node>();	
-		for (String key: mapaDocs.keySet()){
-			Document doc = mapaDocs.get(key);
-			String nombre = (String) xpath.evaluate("/Interprete/Nombre/NombreC|/Interprete/Nombre/NombreG",
-						doc.getDocumentElement(), XPathConstants.STRING);
-			interpretesId.put(nombre, doc);
-		}
-		return interpretesId;
-	}
 	
-	public ArrayList<Node> getArrayListAllInterpretes(){
+	public ArrayList<Node> getArrayListAllFechas(){
 		//Probar a quitar el getDocumentElement (y entender por qué pasa lo que sea que pase)
 		ArrayList<Node> interpretes = new ArrayList<Node>();
 		for(String key: mapaDocs.keySet()){
@@ -206,39 +191,41 @@ public class Sint164P2 extends HttpServlet {
 		}
 		return interpretes;
 	}
+
 	//Unificable con getCanciones por album
-	public ArrayList<Node> getAlbumesPorInterprete(String expr, String consulta1) throws XPathExpressionException{
-		ArrayList<Node> interpretes = new ArrayList<Node>();
-		ArrayList<Node> albumesNodo = new ArrayList<Node>();
+	public ArrayList<String> getCanalesPorFecha(String expr, String consulta1) throws XPathExpressionException{
+		ArrayList<Node> fechas = new ArrayList<Node>();
+		ArrayList<String> canalesNombre = new ArrayList<String>();
 		if(consulta1.equals("todos"))
-			interpretes = getArrayListAllInterpretes();
+			fechas = getArrayListAllFechas();
 		else
-			interpretes.add(mapaDocs.get(consulta1));
-		for(Node interprete: interpretes){
-			NodeList albumes = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
-			for (int i = 0; i < albumes.getLength(); i++){
-				Node album = albumes.item(i);
-				albumesNodo.add(album);
+			fechas.add(mapaDocs.get(consulta1));
+		for(Node fecha: fechas){
+			NodeList canales = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
+			for (int i = 0; i < canales.getLength(); i++) {
+				String nombreCanal = canales.item(i).getTextContent();
+                                if(!canalesNombre.contains(nombreCanal))
+                                        canalesNombre.add(nombreCanal);
 			}
 		}
-		return albumesNodo;
+		return canalesNombre;
 	}
 
 	public ArrayList<Node> getCancionesPorAlbum(String expr, String consulta1) throws XPathExpressionException {
-		ArrayList<Node> interpretes = new ArrayList<Node>();
-		ArrayList<Node> cancionesNombre = new ArrayList<Node>();
+		ArrayList<Node> fechas = new ArrayList<Node>();
+		ArrayList<Node> canalesNombre = new ArrayList<Node>();
 		if(consulta1.equals("todos"))
-			interpretes = getArrayListAllInterpretes();
+			fechas = getArrayListAllFechas();
 		else
-			interpretes.add(mapaDocs.get(consulta1));
-		for(Node interprete: interpretes){
-			NodeList canciones = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
-			for (int i = 0; i < canciones.getLength(); i++) {
-				Node cancion = canciones.item(i);
-				cancionesNombre.add(cancion);
+			fechas.add(mapaDocs.get(consulta1));
+		for(Node fecha: fechas){
+			NodeList canales = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
+			for (int i = 0; i < canales.getLength(); i++) {
+				Node canal = canales.item(i);
+				canalesNombre.add(canal);
 			}
 		}
-		return cancionesNombre;
+		return canalesNombre;
 	}
 	//Unificable con los dos siguientes
 	public ArrayList<String> getConsulta2() throws XPathExpressionException {
