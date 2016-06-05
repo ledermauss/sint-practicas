@@ -108,18 +108,19 @@ public class Sint164P2 extends HttpServlet {
 				vista.replyConsulta1(res, out, ArrayListToHtml(ListaFases), mapaDocs);
 			}else if(nextfase.equals("12")){
 				ListaFases.add("Fecha  = " + valoresConsultas.get(valoresConsultas.size()-1));
-				ArrayList<String> albumes = getCanalesPorFecha(exprXpath(valoresConsultas, nextfase),
+				ArrayList<String> albumes = getPeliculasPorCanal(exprXpath(valoresConsultas, nextfase),
 						valoresConsultas.get(0)); //y mapaDocs (para el controlador si usara MVC)
 				vista.replyCanalesPorFecha(res, out, ArrayListToHtml(ListaFases), albumes);
 			}else if(nextfase.equals("13")){
-				ListaFases.add("Album = " + valoresConsultas.get(valoresConsultas.size()-1));
-				ArrayList<Node>  canciones = getCancionesPorAlbum(exprXpath(valoresConsultas, nextfase),
-						valoresConsultas.get(0));//y mapaDocs (para el controlador si usara MVC)
-				vista.replyCanciones(res, out, ArrayListToHtml(ListaFases), canciones);
-            }else if(nextfase.equals("21")){
-                ListaFases.add("Consulta 2");
-                ArrayList<String> anhos = getConsulta2();
-                vista.replyConsulta2(res, out, ArrayListToHtml(ListaFases), anhos);
+				ListaFases.add("Canal = " + valoresConsultas.get(valoresConsultas.size()-1));
+				ArrayList<String>  canciones = getPeliculasPorCanal(exprXpath(valoresConsultas, nextfase),
+                                                valoresConsultas.get(0));
+				vista.replyPelis(res, out, ArrayListToHtml(ListaFases), canciones);
+
+                            }else if(nextfase.equals("21")){
+                                ListaFases.add("Consulta 2");
+                                ArrayList<String> categorias = getConsulta2();
+                                vista.replyConsulta2(res, out, ArrayListToHtml(ListaFases), categorias);
 			}else if(nextfase.equals("22")){
 				ListaFases.add("Año = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String> albumes  = getAlbumesPorAnho(exprXpath(valoresConsultas, nextfase));
@@ -146,14 +147,14 @@ public class Sint164P2 extends HttpServlet {
 			return "/Programacion/Canal/NombreCanal"; 
 		case 13:
 			if(consultasprevias.get(1).equals("todos"))
-				return "/Interprete/Album/Cancion";
+				return "/Programacion/Canal/Programa[Categoria='Cine']";
 			else
-				return "/Interprete/Album[NombreA='" + consultasprevias.get(1)+ "']/Cancion";
+				return "/Programacion/Canal[NombreCanal='" + consultasprevias.get(1) + "']/Programa[Categoria='Cine']";
 		case 22:
 			if(consultasprevias.get(0).equals("todos"))
 				return "/Interprete/Album/NombreA";
 			else 
-				return "Interprete/Album[Año='" + consultasprevias.get(0) +	"']/NombreA";	
+				return "Interprete/Album[Año='" + consultasprevias.get(0) + "']/NombreA";	
 		case 23:
 		case 24:
 			if(consultasprevias.get(0).equals("todos") && consultasprevias.get(1).equals("todos")){
@@ -211,35 +212,37 @@ public class Sint164P2 extends HttpServlet {
 		return canalesNombre;
 	}
 
-	public ArrayList<Node> getCancionesPorAlbum(String expr, String consulta1) throws XPathExpressionException {
+	public ArrayList<String> getPeliculasPorCanal(String expr, String consulta1) throws XPathExpressionException {
 		ArrayList<Node> fechas = new ArrayList<Node>();
-		ArrayList<Node> canalesNombre = new ArrayList<Node>();
+		ArrayList<String> pelisNombre = new ArrayList<String>();
 		if(consulta1.equals("todos"))
 			fechas = getArrayListAllFechas();
 		else
 			fechas.add(mapaDocs.get(consulta1));
 		for(Node fecha: fechas){
-			NodeList canales = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
-			for (int i = 0; i < canales.getLength(); i++) {
-				Node canal = canales.item(i);
-				canalesNombre.add(canal);
+			NodeList peliculas = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
+			for (int i = 0; i < peliculas.getLength(); i++) {
+				String pelicula = peliculas.item(i).getTextContent();
+				pelisNombre.add(pelicula);
 			}
 		}
-		return canalesNombre;
+		return pelisNombre;
 	}
+        
 	//Unificable con los dos siguientes
 	public ArrayList<String> getConsulta2() throws XPathExpressionException {
-		ArrayList<String> anhos = new ArrayList<String>();
-		for (String id: mapaDocs.keySet()){
-			Node interprete = mapaDocs.get(id);
-			NodeList albumes = (NodeList) xpath.evaluate("Interprete/Album/Año", interprete, XPathConstants.NODESET);
-			for(int i= 0; i < albumes.getLength();i++){
-				String anho = albumes.item(i).getTextContent();
-				if(!anhos.contains(anho))
-					anhos.add(anho);
+		ArrayList<String> categoriasNombre = new ArrayList<String>();
+		for (String fecha: mapaDocs.keySet()){
+			Node prog = mapaDocs.get(fecha);
+			NodeList categorias = (NodeList) xpath.evaluate("/Programacion/Canal/Programa/Categoria", prog, 
+                                        XPathConstants.NODESET);
+			for(int i= 0; i < categorias.getLength();i++){
+				String categoria = categorias.item(i).getTextContent();
+				if(!categoriasNombre.contains(categoria))
+					categoriasNombre.add(categoria);
 			}
 		}
-		return anhos;
+		return categoriasNombre;
 	}
 	
 	//Hay que ordenar por año los albumes!! Talvez sí sea buena idea mandarlos como Hashmap y que lo recupere

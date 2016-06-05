@@ -71,22 +71,13 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyCanciones(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<Node> canciones)
+	public void replyPelis(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> pelis)
 		throws XPathExpressionException{
 		printCabeceraHtml(out, fasesRecorridas);
-		for(Node cancion: canciones){
-			String nombreCancion = (String) xpath.evaluate("./NombreT", cancion, XPathConstants.STRING);
-			String duracion = (String) xpath.evaluate("./Duracion", cancion, XPathConstants.STRING);
-			//Solo coge el texto si está antes que el resto de nodos
-			//String descripcion = (String) xpath.evaluate(".//text()", cancion, XPathConstants.STRING);
-			String descripcion = "";
-			NodeList hijos = cancion.getChildNodes();
-            for (int h=0;h<hijos.getLength();h++){
-            	if(hijos.item(h).getNodeName().equals("#text") && hijos.item(h).getTextContent().trim().equals("")==false)
-                descripcion =descripcion+" "+ hijos.item(h).getTextContent().trim();
-            }
-			System.out.println(cancion.getOwnerDocument().getTextContent());
-			out.println("<tr><td>" + nombreCancion + " (" + descripcion + ", " + duracion + ")</td></tr>");
+		Collections.sort(pelis);
+		for(String peli: pelis){
+                        out.println("<tr><td><input type='radio' name='select' value='" + peli + 
+                                "'>" + peli + "</td></tr>");
 		}
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"12\"/>");
 		out.println("<input type=\"hidden\" name=\"thisfase\" value=\"13\"/>");
@@ -113,9 +104,9 @@ class Vista {
 		return HtmlButtons;
 	}
 
-	public void replyConsulta2(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> anhos) {
+	public void replyConsulta2(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> categorias) {
 		printCabeceraHtml(out, fasesRecorridas);
-		out.println(ArrayListToHtmlButtons(anhos));
+		out.println(ArrayListToHtmlButtons(categorias));
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"0\"/>");
 		out.println("<input type=\"hidden\" name=\"thisfase\" value=\"21\"/>");
 		out.println("<input type=\"hidden\" name=\"nextfase\" value=\"22\"/>");
