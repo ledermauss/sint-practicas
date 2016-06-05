@@ -123,8 +123,8 @@ public class Sint164P2 extends HttpServlet {
                                 vista.replyConsulta2(res, out, ArrayListToHtml(ListaFases), categorias);
 			}else if(nextfase.equals("22")){
 				ListaFases.add("Año = " + valoresConsultas.get(valoresConsultas.size()-1));
-				ArrayList<String> albumes  = getAlbumesPorAnho(exprXpath(valoresConsultas, nextfase));
-				vista.replyAlbumesPorYear(res, out, ArrayListToHtml(ListaFases), albumes);
+				ArrayList<String> langs  = getLangsPorPrograma(exprXpath(valoresConsultas, nextfase));
+				vista.replyAlbumesPorYear(res, out, ArrayListToHtml(ListaFases), langs);
 			}else if(nextfase.equals("23")){
 				ListaFases.add("Album = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String> estilos  = getEstilos(exprXpath(valoresConsultas, nextfase));
@@ -147,14 +147,18 @@ public class Sint164P2 extends HttpServlet {
 			return "/Programacion/Canal/NombreCanal"; 
 		case 13:
 			if(consultasprevias.get(1).equals("todos"))
-				return "/Programacion/Canal/Programa[Categoria='Cine']";
+				return  "/Programacion/Canal/Programa[Categoria='Cine']";
 			else
 				return "/Programacion/Canal[NombreCanal='" + consultasprevias.get(1) + "']/Programa[Categoria='Cine']";
+
 		case 22:
-			if(consultasprevias.get(0).equals("todos"))
-				return "/Interprete/Album/NombreA";
-			else 
-				return "Interprete/Album[Año='" + consultasprevias.get(0) + "']/NombreA";	
+			if(consultasprevias.get(0).equals("todos")){
+				return  "/Programacion/Canal/Programa";
+                                //TODO: evaluar si hay. Si no, devuelvo la expresión para el canal 
+                                //Siguiente consulta: crear variable última consulta (no recalculo)
+                        }else{ 
+				return "/Programacion/Canal/Programa[Categoria='" + consultasprevias.get(0) + "']";	
+                        }
 		case 23:
 		case 24:
 			if(consultasprevias.get(0).equals("todos") && consultasprevias.get(1).equals("todos")){
@@ -246,18 +250,30 @@ public class Sint164P2 extends HttpServlet {
 	}
 	
 	//Hay que ordenar por año los albumes!! Talvez sí sea buena idea mandarlos como Hashmap y que lo recupere
-	public ArrayList<String> getAlbumesPorAnho(String expr) throws XPathExpressionException{
-		ArrayList<String> albumes = new ArrayList<String>();
+	public ArrayList<String> getLangsPorPrograma(String expr) throws XPathExpressionException{
+		ArrayList<String> langs = new ArrayList<String>();
 		for(String key: mapaDocs.keySet()){
 			Node interprete = mapaDocs.get(key);
 			//Si sé que solo hay un album por año, podría sacar solo Node o String y ahorrar el for
-			NodeList albumesNodos = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
-			for(int i = 0; i < albumesNodos.getLength(); i++){
-				Node album = albumesNodos.item(i);
-				albumes.add(album.getTextContent());
+			NodeList programasCategoria = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
+			for(int i = 0; i < programasCategoria.getLength(); i++){
+                                //voy programa a programa y saco los idiomas
+                                String langsPrograma = ((Element)programasCategoria.item(i)).getAttribute("langs");
+                                if(langsPrograma.isEmpty()){
+                                        //si no tiene, cojo los del canal
+                                        Element padre  = (Element)programasCategoria.item(i).getParentNode();
+                                        String langCanal = padre.getAttribute("lang");
+                                        if(!langs.contains(langCanal))
+                                                langs.add(langCanal);
+                                } else{
+                                        String[] parts = langsPrograma.split("\\s+");
+                                        for(String s : parts)
+                                                if(!langs.contains(s))
+                                                        langs.add(s);
+                                }
 			}
 		}
-		return albumes;
+		return langs;
 	}
 	
 	public ArrayList<String> getEstilos(String expr) throws XPathExpressionException{
