@@ -94,19 +94,19 @@ class Vista {
 			return "</br>";
 		Collections.sort(arrayTexto);
 		String HtmlButtons = "<tr><td><input type='radio' name='select' value='" + arrayTexto.get(0) + 
-				"' checked>" + arrayTexto.get(0) +"</td></tr>";
+				"'>" + arrayTexto.get(0) +"</td></tr>";
 		for(int i = 1; i < arrayTexto.size(); i++){
 			HtmlButtons += "<tr><td><input type='radio' name='select' value='" + arrayTexto.get(i) + 
 					"'>" + arrayTexto.get(i) +"</td></tr>";
 		}
-		HtmlButtons += "<tr><td><input type='radio' name='select' value='todos' >Todas las opciones mostradas </td></tr>";
-		HtmlButtons += "<tr><td></br><input type=\"submit\" name=\"accion\" value=\"Enviar\"/></td></tr>";
 		return HtmlButtons;
 	}
 
 	public void replyConsulta2(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> categorias) {
 		printCabeceraHtml(out, fasesRecorridas);
 		out.println(ArrayListToHtmlButtons(categorias));
+                out.println("<tr><td><input type='radio' name='select' value='todos' checked >Todas las opciones mostradas </td></tr>");
+		out.println("<tr><td></br><input type=\"submit\" name=\"accion\" value=\"Enviar\"/></td></tr>");
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"0\"/>");
 		out.println("<input type=\"hidden\" name=\"thisfase\" value=\"21\"/>");
 		out.println("<input type=\"hidden\" name=\"nextfase\" value=\"22\"/>");
@@ -119,6 +119,8 @@ class Vista {
 	public void replyAlbumesPorYear(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> albumes){
 		printCabeceraHtml(out, fasesRecorridas);
 		out.println(ArrayListToHtmlButtons(albumes));
+                out.println("<tr><td><input type='radio' name='select' value='todos' checked >Todas las opciones mostradas </td></tr>");
+		out.println("<tr><td></br><input type=\"submit\" name=\"accion\" value=\"Enviar\"/></td></tr>");
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"21\"/>");
 		out.println("<input type=\"hidden\" name=\"thisfase\" value=\"22\"/>");
 		out.println("<input type=\"hidden\" name=\"nextfase\" value=\"23\"/>");
@@ -130,28 +132,20 @@ class Vista {
 
 	public void replyEstilos(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> estilos){
 		printCabeceraHtml(out, fasesRecorridas);
-		out.println(ArrayListToHtmlButtons(estilos));
+		Collections.sort(estilos);
+		for(String estilo: estilos){
+                        out.println("<tr><td><input type='radio' name='select' value='" + estilo + 
+                                "'>" + estilo + "</td></tr>");
+		}
 		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"22\"/>");
 		out.println("<input type=\"hidden\" name=\"thisfase\" value=\"23\"/>");
-		out.println("<input type=\"hidden\" name=\"nextfase\" value=\"24\"/>");
+		out.println("<input type=\"hidden\" name=\"nextfase\" value=\"0\"/>");
 		out.println("<tr><td><input type=\"submit\" name=\"accion\" value=\"Atras\"/>");
 		out.println("<input type=\"submit\" name=\"accion\" value=\"Inicio\"/></td></tr>");
 		out.println("</table></form>");
 		out.println("</body></html>");
 	}
 
-	public void replyNumeroCanciones(HttpServletResponse res, PrintWriter out, String fasesRecorridas, int canciones){
-		printCabeceraHtml(out, fasesRecorridas);
-		out.println("<tr><td><p>" + "El numero de canciones es " + canciones + "</p></td></tr>");
-		out.println("<input type=\"hidden\" name=\"prevfase\" value=\"23\"/>");
-		out.println("<input type=\"hidden\" name=\"thisfase\" value=\"24\"/>");
-		out.println("<input type=\"hidden\" name=\"nextfase\" value=\"0\"/>");
-		out.println("<tr><td></br><input type=\"submit\" name=\"accion\" value=\"Atras\"/>");
-		out.println("<input type=\"submit\" name=\"accion\" value=\"Inicio\"/></td></tr>");
-		out.println("</table></form>");
-		out.println("</body></html>");
-	}
-	
 	public void printCabeceraHtml(PrintWriter out, String fasesRecorridas){
 		out.println("<html>");
 		out.println("<head>");

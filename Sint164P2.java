@@ -93,6 +93,10 @@ public class Sint164P2 extends HttpServlet {
 			if(!ListaFases.isEmpty())
 				ListaFases.remove(ListaFases.size() - 1);
 			nextfase = req.getParameter("prevfase");
+                        System.out.println("Alla vamos otra vez: valore de las fases y la nextfase");
+                        for(String s : valoresConsultas){
+                                System.out.println(s);
+                        }
 		}else if(req.getParameter("accion").equals("Inicio")){
 			ListaFases.clear();
 			valoresConsultas.clear();
@@ -122,17 +126,13 @@ public class Sint164P2 extends HttpServlet {
                                 ArrayList<String> categorias = getConsulta2();
                                 vista.replyConsulta2(res, out, ArrayListToHtml(ListaFases), categorias);
 			}else if(nextfase.equals("22")){
-				ListaFases.add("Año = " + valoresConsultas.get(valoresConsultas.size()-1));
+				ListaFases.add("Categoria = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String> langs  = getLangsPorPrograma(exprXpath(valoresConsultas, nextfase));
 				vista.replyAlbumesPorYear(res, out, ArrayListToHtml(ListaFases), langs);
 			}else if(nextfase.equals("23")){
-				ListaFases.add("Album = " + valoresConsultas.get(valoresConsultas.size()-1));
-				ArrayList<String> estilos  = getEstilos(exprXpath(valoresConsultas, nextfase));
+				ListaFases.add("Lang = " + valoresConsultas.get(valoresConsultas.size()-1));
+				ArrayList<String> estilos  = getProgramasPorLangs( exprXpath(valoresConsultas, nextfase), valoresConsultas);
 				vista.replyEstilos(res, out, ArrayListToHtml(ListaFases), estilos);
-			}else if(nextfase.equals("24")){
-				ListaFases.add("Estilo = " + valoresConsultas.get(valoresConsultas.size()-1));
-				int numeroCanciones = getNumeroCanciones(exprXpath(valoresConsultas, nextfase));
-				vista.replyNumeroCanciones(res, out, ArrayListToHtml(ListaFases), numeroCanciones);
 			}
 		}catch(XPathExpressionException xe){
 			xe.printStackTrace();
@@ -141,7 +141,6 @@ public class Sint164P2 extends HttpServlet {
 	
 	public String exprXpath(ArrayList<String> consultasprevias, String nextfase){
 		int faseSig = Integer.parseInt(nextfase);	
-		String penultimaConsulta = "";
 		switch(faseSig){
 		case 12:
 			return "/Programacion/Canal/NombreCanal"; 
@@ -152,39 +151,15 @@ public class Sint164P2 extends HttpServlet {
 				return "/Programacion/Canal[NombreCanal='" + consultasprevias.get(1) + "']/Programa[Categoria='Cine']";
 
 		case 22:
+                case 23: //es lo mismo: saco los canales. En el método de la consulta los iterare para sacar sus lenguajes
+                        //o los de sus canales
 			if(consultasprevias.get(0).equals("todos")){
 				return  "/Programacion/Canal/Programa";
-                                //TODO: evaluar si hay. Si no, devuelvo la expresión para el canal 
-                                //Siguiente consulta: crear variable última consulta (no recalculo)
                         }else{ 
 				return "/Programacion/Canal/Programa[Categoria='" + consultasprevias.get(0) + "']";	
                         }
-		case 23:
-		case 24:
-			if(consultasprevias.get(0).equals("todos") && consultasprevias.get(1).equals("todos")){
-			//todos los estilos
-				penultimaConsulta = "/Interprete/Album/Cancion";
-			}else if(!consultasprevias.get(0).equals("todos") && consultasprevias.get(1).equals("todos")){
-			//Año específico, todos los albumes 
-				penultimaConsulta = "Interprete/Album[Año='" + consultasprevias.get(0) +	"']/Cancion";
-			}else if(consultasprevias.get(0).equals("todos") && !consultasprevias.get(1).equals("todos")){
-			//Todos los años, album específico
-				penultimaConsulta = "Interprete/Album[NombreA='" + consultasprevias.get(1) +	"']/Cancion";
-			}else {
-			//album y año específico
-				penultimaConsulta = "Interprete/Album[Año='" + consultasprevias.get(0) +
-					"' and NombreA='" + consultasprevias.get(1) +  "']/Cancion";
-			}
 		}
-		if(faseSig == 23){
-			return penultimaConsulta + "/@estilo";
-		}else if (faseSig == 24){
-				if(consultasprevias.get(2).equals("todos"))
-					return penultimaConsulta;
-			return penultimaConsulta + "[@estilo='" + consultasprevias.get(2) + "']";
-		}
-			
-		return null;
+                return null;
 	}
 	
 	
@@ -276,29 +251,31 @@ public class Sint164P2 extends HttpServlet {
 		return langs;
 	}
 	
-	public ArrayList<String> getEstilos(String expr) throws XPathExpressionException{
-		ArrayList<String> estilos = new ArrayList<String>();
+	public ArrayList<String> getProgramasPorLangs(String expr, ArrayList<String> consultasprevias) throws XPathExpressionException{
+		ArrayList<String> progs = new ArrayList<String>();
 		for(String key: mapaDocs.keySet()){
 			Node interprete = mapaDocs.get(key);
-			NodeList estiloNodos = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
-			for(int i = 0; i < estiloNodos.getLength(); i++){
-				String estilo = estiloNodos.item(i).getTextContent();
-				if(!estilos.contains(estilo))
-					estilos.add(estilo);
+			//Si sé que solo hay un album por año, podría sacar solo Node o String y ahorrar el for
+			NodeList programasCategoria = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
+			for(int i = 0; i < programasCategoria.getLength(); i++){
+                                //voy programa a programa y saco los idiomas
+                                String langsPrograma = ((Element)programasCategoria.item(i)).getAttribute("langs"); 
+                                if(consultasprevias.get(1).equals("todos")){
+                                        progs.add(programasCategoria.item(i).getTextContent());
+                                }else{
+                                        if(langsPrograma.isEmpty()){ //si no tiene, cojo los del canal
+                                                Element padre  = (Element)programasCategoria.item(i).getParentNode();
+                                                langsPrograma = padre.getAttribute("lang");
+                                        }
+                                        if(langsPrograma.contains(consultasprevias.get(1))){
+                                                //TODO: sacar el texto adecuado
+                                                progs.add(programasCategoria.item(i).getTextContent());
+                                        }
+                                }
 			}
 		}
-		return estilos;
+		return progs;
 	}
 	
-	public int getNumeroCanciones(String expr) throws XPathExpressionException{
-		int numeroCanciones = 0;
-		for(String key: mapaDocs.keySet()){
-			Node interprete = mapaDocs.get(key);
-			NodeList canciones = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
-			//al no haber canciones repetidas, no tengo que comprobar nada
-			numeroCanciones += canciones.getLength();
-		}
-		return numeroCanciones;
-	}
 }
 
