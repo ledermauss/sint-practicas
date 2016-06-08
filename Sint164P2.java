@@ -76,13 +76,13 @@ public class Sint164P2 extends HttpServlet {
 		res.setContentType("text/html");
 		PrintWriter out = res.getWriter();
 		String select = req.getParameter("select");
-		System.out.println("El vaor elegido es:" + select);
 		String nextfase = req.getParameter("nextfase");
-		System.out.println("La nextfase debería ser:" + nextfase);
+		System.out.println("SIGUIENTE FASE:" + nextfase);
+		System.out.println("VALOR ELEGIDO:" + select);
 		if(select != null){//Habrá que cambiarlo cuando reestructure todo
 			valoresConsultas.add(select);
 		}
-		System.out.println("El append funcionó: " + valoresConsultas.size());
+		System.out.println("CONSULTAS PREVIAS: " + valoresConsultas.size());
 		for(String s : valoresConsultas){
 			System.out.println(s);
 		}
@@ -112,7 +112,7 @@ public class Sint164P2 extends HttpServlet {
 				vista.replyConsulta1(res, out, ArrayListToHtml(ListaFases), mapaDocs);
 			}else if(nextfase.equals("12")){
 				ListaFases.add("Fecha  = " + valoresConsultas.get(valoresConsultas.size()-1));
-				ArrayList<String> albumes = getPeliculasPorCanal(exprXpath(valoresConsultas, nextfase),
+				ArrayList<String> albumes = getCanalesPorFecha(exprXpath(valoresConsultas, nextfase),
 						valoresConsultas.get(0)); //y mapaDocs (para el controlador si usara MVC)
 				vista.replyCanalesPorFecha(res, out, ArrayListToHtml(ListaFases), albumes);
 			}else if(nextfase.equals("13")){
@@ -156,8 +156,7 @@ public class Sint164P2 extends HttpServlet {
 			if(consultasprevias.get(0).equals("todos")){
 				return  "/Programacion/Canal/Programa";
                         }else{ 
-				return "/Programacion/Canal/Programa[Categoria='" + consultasprevias.get(0) + "']";	
-                        }
+				return "/Programacion/Canal/Programa[Categoria='" + consultasprevias.get(0) + "']";	}
 		}
                 return null;
 	}
@@ -184,8 +183,10 @@ public class Sint164P2 extends HttpServlet {
 			NodeList canales = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
 			for (int i = 0; i < canales.getLength(); i++) {
 				String nombreCanal = canales.item(i).getTextContent();
-                                if(!canalesNombre.contains(nombreCanal))
+                                if(!canalesNombre.contains(nombreCanal)){
                                         canalesNombre.add(nombreCanal);
+                                        System.out.println(nombreCanal);
+                                }
 			}
 		}
 		return canalesNombre;
@@ -201,8 +202,17 @@ public class Sint164P2 extends HttpServlet {
 		for(Node fecha: fechas){
 			NodeList peliculas = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
 			for (int i = 0; i < peliculas.getLength(); i++) {
-				String pelicula = peliculas.item(i).getTextContent();
-				pelisNombre.add(pelicula);
+                                String sinopsis="";
+                                String nombrePeli = (String) xpath.evaluate("./NombrePrograma", peliculas.item(i),
+                                                XPathConstants.STRING);
+                                NodeList hijos = peliculas.item(i).getChildNodes();
+                                for (int j=0;j<hijos.getLength();j++){
+                                        if(hijos.item(j).getNodeName().equals("#text") && 
+                                                        hijos.item(j).getTextContent().trim().equals("")==false){
+                                                sinopsis += " "+ hijos.item(j).getTextContent().trim();
+                                        }
+                                }
+				pelisNombre.add(nombrePeli + " - " + sinopsis);
 			}
 		}
 		return pelisNombre;
@@ -258,18 +268,21 @@ public class Sint164P2 extends HttpServlet {
 			//Si sé que solo hay un album por año, podría sacar solo Node o String y ahorrar el for
 			NodeList programasCategoria = (NodeList) xpath.evaluate(expr, interprete, XPathConstants.NODESET);
 			for(int i = 0; i < programasCategoria.getLength(); i++){
+                                Node prog = programasCategoria.item(i);
                                 //voy programa a programa y saco los idiomas
-                                String langsPrograma = ((Element)programasCategoria.item(i)).getAttribute("langs"); 
+                                String langsPrograma = ((Element)prog).getAttribute("langs"); 
+                                String edadMinima = ((Element)prog).getAttribute("edadminima"); 
+                                String nombreProg = (String) xpath.evaluate("./NombrePrograma", prog, XPathConstants.STRING);
                                 if(consultasprevias.get(1).equals("todos")){
-                                        progs.add(programasCategoria.item(i).getTextContent());
+                                        progs.add(nombreProg +", edad mínima: " + edadMinima + " años" );
                                 }else{
-                                        if(langsPrograma.isEmpty()){ //si no tiene, cojo los del canal
-                                                Element padre  = (Element)programasCategoria.item(i).getParentNode();
+                                        //si no tiene langs, el correspondiente es el del canal
+                                        if(langsPrograma.isEmpty()){ 
+                                                Element padre  = (Element)prog.getParentNode();
                                                 langsPrograma = padre.getAttribute("lang");
                                         }
                                         if(langsPrograma.contains(consultasprevias.get(1))){
-                                                //TODO: sacar el texto adecuado
-                                                progs.add(programasCategoria.item(i).getTextContent());
+                                                progs.add(nombreProg +", Apto para mayores de: " + edadMinima + "años" );
                                         }
                                 }
 			}
