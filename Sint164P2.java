@@ -77,22 +77,21 @@ public class Sint164P2 extends HttpServlet {
 		PrintWriter out = res.getWriter();
 		String select = req.getParameter("select");
 		String nextfase = req.getParameter("nextfase");
+		String thisfase = req.getParameter("thisfase");
+		String prevfase = req.getParameter("prevfase");
 		System.out.println("SIGUIENTE FASE:" + nextfase);
 		System.out.println("VALOR ELEGIDO:" + select);
-		if(select != null){//Habrá que cambiarlo cuando reestructure todo
-			valoresConsultas.add(select);
-		}
 		System.out.println("CONSULTAS PREVIAS: " + valoresConsultas.size());
 		for(String s : valoresConsultas){
 			System.out.println(s);
 		}
 		if(req.getParameter("accion").equals("Atras")){
 			//decimos que la siguiente fase es la anterior
-			ListaFases.remove(ListaFases.size() - 1);
-			valoresConsultas.remove(valoresConsultas.size() -1);
-			if(!ListaFases.isEmpty())
-				ListaFases.remove(ListaFases.size() - 1);
-			nextfase = req.getParameter("prevfase");
+                        if(!prevfase.equals("0")){
+                                ListaFases.remove(ListaFases.size() - 1);
+                                valoresConsultas.remove(valoresConsultas.size() -1);
+                        }
+			nextfase = prevfase;
                         System.out.println("Alla vamos otra vez: valore de las fases y la nextfase");
                         for(String s : valoresConsultas){
                                 System.out.println(s);
@@ -101,36 +100,33 @@ public class Sint164P2 extends HttpServlet {
 			ListaFases.clear();
 			valoresConsultas.clear();
 			nextfase = "0";
+		}else if(!thisfase.equals("0")){//se escogió enviar y no era la primera 
+			valoresConsultas.add(select);
+                        ListaFases.add(select);
 		}
 		try{
 			if(nextfase.equals("0")){
 				vista.replyConsultaInicial(out, listaErrores);
 			}else
 				if(nextfase.equals("11")){
-				ListaFases.add("Consulta 1");
 				String fasesRecorridas = ArrayListToHtml(ListaFases);
 				vista.replyConsulta1(res, out, ArrayListToHtml(ListaFases), mapaDocs);
 			}else if(nextfase.equals("12")){
-				ListaFases.add("Fecha  = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String> albumes = getCanalesPorFecha(exprXpath(valoresConsultas, nextfase),
 						valoresConsultas.get(0)); //y mapaDocs (para el controlador si usara MVC)
 				vista.replyCanalesPorFecha(res, out, ArrayListToHtml(ListaFases), albumes);
 			}else if(nextfase.equals("13")){
-				ListaFases.add("Canal = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String>  canciones = getPeliculasPorCanal(exprXpath(valoresConsultas, nextfase),
                                                 valoresConsultas.get(0));
 				vista.replyPelis(res, out, ArrayListToHtml(ListaFases), canciones);
 
-                            }else if(nextfase.equals("21")){
-                                ListaFases.add("Consulta 2");
+                        }else if(nextfase.equals("21")){
                                 ArrayList<String> categorias = getConsulta2();
                                 vista.replyConsulta2(res, out, ArrayListToHtml(ListaFases), categorias);
 			}else if(nextfase.equals("22")){
-				ListaFases.add("Categoria = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String> langs  = getLangsPorPrograma(exprXpath(valoresConsultas, nextfase));
 				vista.replyAlbumesPorYear(res, out, ArrayListToHtml(ListaFases), langs);
 			}else if(nextfase.equals("23")){
-				ListaFases.add("Lang = " + valoresConsultas.get(valoresConsultas.size()-1));
 				ArrayList<String> estilos  = getProgramasPorLangs( exprXpath(valoresConsultas, nextfase), valoresConsultas);
 				vista.replyEstilos(res, out, ArrayListToHtml(ListaFases), estilos);
 			}
@@ -199,7 +195,8 @@ public class Sint164P2 extends HttpServlet {
 			fechas = getArrayListAllFechas();
 		else
 			fechas.add(mapaDocs.get(consulta1));
-		for(Node fecha: fechas){
+
+		for(Node fecha: fechas) {
 			NodeList peliculas = (NodeList) xpath.evaluate(expr, fecha, XPathConstants.NODESET);
 			for (int i = 0; i < peliculas.getLength(); i++) {
                                 String sinopsis="";
@@ -216,7 +213,7 @@ public class Sint164P2 extends HttpServlet {
 			}
 		}
 		return pelisNombre;
-	}
+        }
         
 	//Unificable con los dos siguientes
 	public ArrayList<String> getConsulta2() throws XPathExpressionException {
