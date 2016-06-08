@@ -109,26 +109,24 @@ public class Sint164P2 extends HttpServlet {
 				vista.replyConsultaInicial(out, listaErrores);
 			}else
 				if(nextfase.equals("11")){
-				String fasesRecorridas = ArrayListToHtml(ListaFases);
-				vista.replyConsulta1(res, out, ArrayListToHtml(ListaFases), mapaDocs);
+				vista.replyConsulta1(res, out, ListaFases, mapaDocs);
 			}else if(nextfase.equals("12")){
 				ArrayList<String> albumes = getCanalesPorFecha(exprXpath(valoresConsultas, nextfase),
 						valoresConsultas.get(0)); //y mapaDocs (para el controlador si usara MVC)
-				vista.replyCanalesPorFecha(res, out, ArrayListToHtml(ListaFases), albumes);
+				vista.replyCanalesPorFecha(res, out, ListaFases, albumes);
 			}else if(nextfase.equals("13")){
 				ArrayList<String>  canciones = getPeliculasPorCanal(exprXpath(valoresConsultas, nextfase),
                                                 valoresConsultas.get(0));
-				vista.replyPelis(res, out, ArrayListToHtml(ListaFases), canciones);
-
+				vista.replyPelis(res, out, ListaFases, canciones);
                         }else if(nextfase.equals("21")){
                                 ArrayList<String> categorias = getConsulta2();
-                                vista.replyConsulta2(res, out, ArrayListToHtml(ListaFases), categorias);
+                                vista.replyConsulta2(res, out, ListaFases, categorias);
 			}else if(nextfase.equals("22")){
 				ArrayList<String> langs  = getLangsPorPrograma(exprXpath(valoresConsultas, nextfase));
-				vista.replyAlbumesPorYear(res, out, ArrayListToHtml(ListaFases), langs);
+				vista.replyAlbumesPorYear(res, out, ListaFases, langs);
 			}else if(nextfase.equals("23")){
 				ArrayList<String> estilos  = getProgramasPorLangs( exprXpath(valoresConsultas, nextfase), valoresConsultas);
-				vista.replyEstilos(res, out, ArrayListToHtml(ListaFases), estilos);
+				vista.replyEstilos(res, out, ListaFases, estilos);
 			}
 		}catch(XPathExpressionException xe){
 			xe.printStackTrace();

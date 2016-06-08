@@ -7,6 +7,8 @@ import org.w3c.dom.*;
 
 //TODO: si ho hay nada, imprimir "error, no hay nada que mostrar
 class Vista {
+        String[] nombreFasesC1 = {"Consulta 1", "Fecha", "Canal"};
+        String[] nombreFasesC2 = {"Consulta 2", "Categoria", "Idioma"};
 	private XPath xpath;
 	
 	public Vista(){
@@ -33,9 +35,9 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyConsulta1(HttpServletResponse res, PrintWriter out, String fasesRecorridas,
+	public void replyConsulta1(HttpServletResponse res, PrintWriter out, ArrayList<String> fasesRecorridas,
 			HashMap<String, Document> fechas) throws XPathExpressionException{ 
-		printCabeceraHtml(out, fasesRecorridas);
+		printCabeceraHtml(out, fasesRecorridas, "11");
 		TreeMap<String, Node> mapaOrdenado = new TreeMap<String, Node>();
 		mapaOrdenado.putAll(fechas);
 		for(String fecha: mapaOrdenado.keySet()){ 
@@ -52,9 +54,9 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyCanalesPorFecha(HttpServletResponse res, PrintWriter out, String fasesRecorridas, 
+	public void replyCanalesPorFecha(HttpServletResponse res, PrintWriter out, ArrayList<String> fasesRecorridas, 
 			ArrayList<String> canales) throws XPathExpressionException{
-		printCabeceraHtml(out, fasesRecorridas);
+		printCabeceraHtml(out, fasesRecorridas, "12");
 		Collections.sort(canales);
 		for(String nombreCanal: canales){
                         out.println("<tr><td><input type='radio' name='select' value='" + nombreCanal + 
@@ -71,9 +73,9 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyPelis(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> pelis)
+	public void replyPelis(HttpServletResponse res, PrintWriter out, ArrayList<String> fasesRecorridas, ArrayList<String> pelis)
 		throws XPathExpressionException{
-		printCabeceraHtml(out, fasesRecorridas);
+		printCabeceraHtml(out, fasesRecorridas, "13");
 		Collections.sort(pelis);
 		for(String peli: pelis){
                         out.println("<tr><td><input type='radio' name='select' value='" + peli + 
@@ -102,8 +104,8 @@ class Vista {
 		return HtmlButtons;
 	}
 
-	public void replyConsulta2(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> categorias) {
-		printCabeceraHtml(out, fasesRecorridas);
+	public void replyConsulta2(HttpServletResponse res, PrintWriter out, ArrayList<String> fasesRecorridas, ArrayList<String> categorias) {
+		printCabeceraHtml(out, fasesRecorridas, "21");
 		out.println(ArrayListToHtmlButtons(categorias));
                 out.println("<tr><td><input type='radio' name='select' value='todos' checked >Todas las opciones mostradas </td></tr>");
 		out.println("<tr><td></br><input type=\"submit\" name=\"accion\" value=\"Enviar\"/></td></tr>");
@@ -116,8 +118,8 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyAlbumesPorYear(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> albumes){
-		printCabeceraHtml(out, fasesRecorridas);
+	public void replyAlbumesPorYear(HttpServletResponse res, PrintWriter out, ArrayList<String> fasesRecorridas, ArrayList<String> albumes){
+		printCabeceraHtml(out, fasesRecorridas, "22");
 		out.println(ArrayListToHtmlButtons(albumes));
                 out.println("<tr><td><input type='radio' name='select' value='todos' checked >Todas las opciones mostradas </td></tr>");
 		out.println("<tr><td></br><input type=\"submit\" name=\"accion\" value=\"Enviar\"/></td></tr>");
@@ -130,8 +132,8 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void replyEstilos(HttpServletResponse res, PrintWriter out, String fasesRecorridas, ArrayList<String> estilos){
-		printCabeceraHtml(out, fasesRecorridas);
+	public void replyEstilos(HttpServletResponse res, PrintWriter out, ArrayList<String> fasesRecorridas, ArrayList<String> estilos){
+		printCabeceraHtml(out, fasesRecorridas, "23");
 		Collections.sort(estilos);
 		for(String estilo: estilos){
                         out.println("<tr><td><input type='radio' name='select' value='" + estilo + 
@@ -146,17 +148,27 @@ class Vista {
 		out.println("</body></html>");
 	}
 
-	public void printCabeceraHtml(PrintWriter out, String fasesRecorridas){
+	public void printCabeceraHtml(PrintWriter out, ArrayList<String> fasesRecorridas, String num){
+                int consulta = num.charAt(0) - '0';
+                int fase = num.charAt(1) - '0';
+                String[] textoConsultas = (consulta == 1) ? nombreFasesC1 : nombreFasesC2;
 		out.println("<html>");
 		out.println("<head>");
 		out.println("<title>Practica 2</title>");
-		//out.println("<meta http-equiv=\"Content-Type\" content=\"text/html;charset=ISO-8859-8\">");
+		out.println("<meta http-equiv=\"Content-Type\" content=\"text/html;charset=ISO-8859-8\">");
 		//o mejor solo meta charset=UTF-8
 		out.println("<link rel='stylesheet' href='iml.css'>");
 		out.println("</head>");
 		out.println("<body>");
 		out.println("<form name='form' id='form' method='POST'><table id='tabla'>");
-		out.println("<tr><td><h3>" + fasesRecorridas + "</h3></br></td></tr>");
+                
+                if(fase > 0)
+		        out.println("<tr><td><h3>" + textoConsultas[0] + ", </h3></td></tr>");
+
+                for(int i = 1; i < fase; i++)
+		        out.println("<tr><td><h3>" + textoConsultas[i] + " = " + fasesRecorridas.get(i-1).trim() + ", <h3></td></tr>");
+
+                out.println("</br>");
 	}
 }
 
